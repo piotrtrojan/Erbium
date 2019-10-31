@@ -35,7 +35,8 @@ namespace StockAnalyzer.Windows
 
             var loadLinesTask = Task.Run(() => 
             {
-                return File.ReadAllLines(@"C:\GIT\Erbium\Data\StockPrices_Small.csv");
+                var lines = File.ReadAllLines(@"C:\GIT\Erbium\Data\StockPrices_Small.csv");
+                return lines;
             });
 
 
@@ -71,9 +72,17 @@ namespace StockAnalyzer.Windows
                 {
                     MessageBox.Show(ex.Message);
                 }
-            });
+            }, TaskContinuationOptions.OnlyOnRanToCompletion);
 
-            await processStocksTask.ContinueWith(_ =>
+            loadLinesTask.ContinueWith(t =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    Notes.Text = t.Exception.InnerException.Message;
+                });
+            }, TaskContinuationOptions.OnlyOnFaulted);
+
+            processStocksTask.ContinueWith(_ =>
             {
                 #region After stock data is loaded
                 Dispatcher.Invoke(() =>
