@@ -29,14 +29,23 @@ namespace StockAnalyzer.Windows
             StockProgress.Visibility = Visibility.Visible;
             StockProgress.IsIndeterminate = true;
             #endregion
-
-            await GetStocks();
+            try
+            {
+                await GetStocks();
+            }
+            catch (Exception ex)
+            {
+                Notes.Text = ex.Message;
+            }
+            
             
             #region After stock data is loaded
             StocksStatus.Text = $"Loaded stocks for {Ticker.Text} in {watch.ElapsedMilliseconds}ms";
             StockProgress.Visibility = Visibility.Hidden;
             #endregion
         }
+
+
 
         private void KeyUpHandler(object sender, RoutedEventArgs e)
         {
