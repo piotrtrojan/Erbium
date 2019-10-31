@@ -33,15 +33,22 @@ namespace StockAnalyzer.Windows
             StockProgress.IsIndeterminate = true;
             #endregion
 
-            await Task.Run(() => 
+            var loadLinesTask = Task.Run(() => 
             {
-                var lines = File.ReadAllLines(@"C:\GIT\Erbium\Data\StockPrices_Small.csv");
+                return File.ReadAllLines(@"C:\GIT\Erbium\Data\StockPrices_Small.csv");
+            });
+
+
+            var processStocksTask = loadLinesTask.ContinueWith(t =>
+            {
+                var lines = t.Result;
                 var data = new List<StockPrice>();
                 foreach (var line in lines.Skip(1))
                 {
                     var segments = line.Split(',');
 
-                    for (var i = 0; i < segments.Length; i++) segments[i] = segments[i].Trim('\'', '"');
+                    for (var i = 0; i < segments.Length; i++) 
+                        segments[i] = segments[i].Trim('\'', '"');
                     var price = new StockPrice
                     {
                         Ticker = segments[0],
@@ -54,7 +61,7 @@ namespace StockAnalyzer.Windows
                 }
                 try
                 {
-                    // Dispatcher enables us to call UI Controls from Main UI Thread without Exception.
+                    // Dispatcher enables us to call UI Controls from Main UI Thread without Exception. 
                     Dispatcher.Invoke(() =>
                     {
                         Stocks.ItemsSource = data.Where(p => p.Ticker == Ticker.Text);
@@ -66,10 +73,18 @@ namespace StockAnalyzer.Windows
                 }
             });
 
-            #region After stock data is loaded
-            StocksStatus.Text = $"Loaded stocks for {Ticker.Text} in {watch.ElapsedMilliseconds}ms";
-            StockProgress.Visibility = Visibility.Hidden;
-            #endregion
+            await processStocksTask.ContinueWith(_ =>
+            {
+                #region After stock data is loaded
+                Dispatcher.Invoke(() =>
+                {
+                    StocksStatus.Text = $"Loaded stocks for {Ticker.Text} in {watch.ElapsedMilliseconds}ms";
+                    StockProgress.Visibility = Visibility.Hidden;
+                });
+                #endregion
+            });
+
+            
         }
 
         #region Module 2
