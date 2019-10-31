@@ -33,7 +33,7 @@ namespace StockAnalyzer.Windows
             StockProgress.IsIndeterminate = true;
             #endregion
 
-            var myTask = Task.Run(() => 
+            await Task.Run(() => 
             {
                 var lines = File.ReadAllLines(@"C:\GIT\Erbium\Data\StockPrices_Small.csv");
                 var data = new List<StockPrice>();
@@ -54,7 +54,11 @@ namespace StockAnalyzer.Windows
                 }
                 try
                 {
-                    Stocks.ItemsSource = data.Where(p => p.Ticker == Ticker.Text);
+                    // Dispatcher enables us to call UI Controls from Main UI Thread without Exception.
+                    Dispatcher.Invoke(() =>
+                    {
+                        Stocks.ItemsSource = data.Where(p => p.Ticker == Ticker.Text);
+                    });
                 }
                 catch (Exception ex)
                 {
