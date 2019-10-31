@@ -40,7 +40,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="100" />
                     </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" Padding="3" Margin="0 0 20 0" x:Name="Ticker"></TextBox>
+                    <TextBox Grid.Column="0" Padding="3" Margin="0 0 20 0" x:Name="Ticker" KeyUp="KeyUpHandler"></TextBox>
                     <Button x:Name="Search" Grid.Column="1" Click="Search_Click">Search</Button>
                 </Grid>
             </GroupBox>

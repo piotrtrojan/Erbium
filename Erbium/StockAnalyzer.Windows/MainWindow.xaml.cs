@@ -5,6 +5,8 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Navigation;
 using Newtonsoft.Json;
 using StockAnalyzer.Core.Domain;
@@ -16,9 +18,10 @@ namespace StockAnalyzer.Windows
         public MainWindow()
         {
             InitializeComponent();
+            Ticker.Focus();
         }
 
-        private void Search_Click(object sender, RoutedEventArgs e)
+        private async void Search_Click(object sender, RoutedEventArgs e)
         {
             #region Before loading stock data
             var watch = new Stopwatch();
@@ -27,18 +30,41 @@ namespace StockAnalyzer.Windows
             StockProgress.IsIndeterminate = true;
             #endregion
 
-            var client = new WebClient();
-
-            var content = client.DownloadString($"http://localhost:61363/api/stocks/{Ticker.Text}");
-
-            var data = JsonConvert.DeserializeObject<IEnumerable<StockPrice>>(content);
-
-            Stocks.ItemsSource = data;
-
+            await GetStocks();
+            
             #region After stock data is loaded
             StocksStatus.Text = $"Loaded stocks for {Ticker.Text} in {watch.ElapsedMilliseconds}ms";
             StockProgress.Visibility = Visibility.Hidden;
             #endregion
+        }
+
+        private void KeyUpHandler(object sender, RoutedEventArgs e)
+        {
+            var keyPressed = ((KeyEventArgs)e).Key;
+            if (keyPressed == Key.Enter)
+            {
+                Search.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            }
+        }
+
+        public async Task GetStocks()
+        {
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync($"http://localhost:61363/api/stocks/{Ticker.Text}");
+
+                try
+                {
+                    response.EnsureSuccessStatusCode();
+                    var content = await response.Content.ReadAsStringAsync();
+                    var data = JsonConvert.DeserializeObject<IEnumerable<StockPrice>>(content);
+                    Stocks.ItemsSource = data;
+                }
+                catch (Exception ex)
+                {
+                    Notes.Text += ex.Message;
+                }
+            }
         }
 
         private void Hyperlink_OnRequestNavigate(object sender, RequestNavigateEventArgs e)
